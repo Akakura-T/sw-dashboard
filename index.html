@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社内ダッシュボード</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0D1117;--surface:#161B22;--card:#1C2333;--border:#30363D;
+  --text:#E6EDF3;--text2:#8B949E;--accent:#58A6FF;--green:#3FB950;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.15em;color:var(--accent);
+  font-family:'DM Mono',monospace;margin-bottom:8px;text-align:center}
+h1{font-size:28px;font-weight:700;text-align:center;margin-bottom:4px;letter-spacing:-.02em}
+.sub{font-size:12px;color:var(--text2);text-align:center;margin-bottom:40px;font-family:'DM Mono',monospace}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;max-width:700px;width:100%}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;
+  text-decoration:none;color:var(--text);transition:.2s;display:block}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);background:#1E2A3A}
+.card-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);font-family:'DM Mono',monospace;margin-bottom:10px}
+.card-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.card-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.card-badge{display:inline-block;margin-top:10px;font-size:10px;padding:3px 8px;
+  border-radius:20px;border:1px solid var(--border);color:var(--text2)}
+footer{margin-top:48px;font-size:11px;color:var(--text2);font-family:'DM Mono',monospace}
+</style>
+</head>
+<body>
+<div class="logo">SY · INTERNAL ANALYTICS PORTAL</div>
+<h1>社内ダッシュボード</h1>
+<div class="sub">INTERNAL ANALYTICS PORTAL</div>
+<div class="cards">
+  <a class="card" href="software.html">
+    <div class="card-tag">💻 SOFTWARE DIVISION</div>
+    <div class="card-title">ソフトウェア部門ダッシュボード</div>
+    <div class="card-desc">trackerr / 配録 / KURAud の売上・粗利・LTV・ユーザー別推移をリアルタイム可視化。Excelアップロードで即時更新。</div>
+    <span class="card-badge">月次更新</span>
+  </a>
+</div>
+<footer>INTERNAL ANALYTICS PORTAL — GitHub Pages</footer>
+</body>
+</html>

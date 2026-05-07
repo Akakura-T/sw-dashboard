@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ソフトウェア部門ダッシュボード</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0D1117;--surface:#161B22;--card:#1C2333;--border:#30363D;
+  --text:#E6EDF3;--text2:#8B949E;
+  --accent:#58A6FF;--green:#3FB950;--red:#F85149;--orange:#E8912D;
+  --navy:#1F3864;--blue:#2E75B6;--teal:#0F6E56;--purple:#7030A0;--amber:#BA7517;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* NAV */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;
+  display:flex;align-items:center;gap:20px;height:50px;position:sticky;top:0;z-index:100}
+.nav-logo{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.06em;white-space:nowrap}
+.nav-links{display:flex;gap:2px;overflow-x:auto}
+.nav-links a{font-size:12px;color:var(--text2);text-decoration:none;padding:6px 12px;
+  border-radius:6px;white-space:nowrap;transition:.15s}
+.nav-links a:hover{background:rgba(88,166,255,.1);color:var(--accent)}
+.nav-links a.active{background:rgba(88,166,255,.15);color:var(--accent);font-weight:700}
+.nav-actions{margin-left:auto;display:flex;gap:8px}
+.btn{font-size:12px;font-family:inherit;padding:7px 14px;border-radius:7px;border:none;
+  cursor:pointer;font-weight:500;transition:.15s;display:flex;align-items:center;gap:5px}
+.btn-ghost{background:var(--card);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border);color:var(--text)}
+.btn-save{background:var(--teal);color:#fff}
+.btn-save:hover{opacity:.85}
+.btn-primary{background:var(--accent);color:var(--bg)}
+.btn-primary:hover{background:#79C0FF}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0D1B35 0%,#111827 100%);
+  border-bottom:1px solid var(--border);padding:28px 28px 24px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hero-tag{font-size:11px;font-family:'DM Mono',monospace;color:var(--accent);
+  background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);
+  border-radius:20px;padding:3px 10px;display:inline-block;margin-bottom:8px}
+.hero-title{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.hero-title span{color:var(--accent)}
+.hero-sub{font-size:12px;color:var(--text2);margin-top:5px;font-family:'DM Mono',monospace}
+.period-badge{font-size:11px;font-family:'DM Mono',monospace;color:var(--accent);
+  background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);
+  border-radius:20px;padding:4px 12px;white-space:nowrap}
+
+/* KPI BAR */
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.kpi{background:var(--surface);padding:16px 20px;transition:.15s;cursor:default}
+.kpi:hover{background:var(--card)}
+.kpi-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em}
+.kpi-value{font-size:24px;font-weight:700;font-family:'DM Mono',monospace;margin-top:3px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.c-accent{color:var(--accent)}.c-green{color:var(--green)}.c-red{color:var(--red)}.c-orange{color:var(--orange)}
+
+/* MAIN */
+main{padding:24px 20px;max-width:1400px;margin:0 auto}
+.sec-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;
+  letter-spacing:.1em;border-left:3px solid var(--accent);padding-left:9px;
+  margin:28px 0 14px}
+.sec-title:first-child{margin-top:0}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.chart-wrap{position:relative}
+
+/* INSIGHT */
+.insight{background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.18);
+  border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.8;margin-bottom:20px}
+.insight strong{color:var(--accent)}
+
+/* LTV MACRO */
+.ltv-macro{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.macro-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.macro-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.macro-value{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;margin-top:3px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:var(--surface);color:var(--text2);font-size:10px;text-transform:uppercase;
+  letter-spacing:.07em;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;font-weight:500}
+.tbl td{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-family:'DM Mono',monospace}
+.tbl tr:hover td{background:rgba(255,255,255,.025)}
+.badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;font-family:'Noto Sans JP',sans-serif}
+.badge-on{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-off{background:rgba(248,81,73,.12);color:var(--red)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;
+  align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:28px;width:460px;max-width:95vw}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:7px}
+.modal p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:18px}
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:36px;
+  text-align:center;cursor:pointer;transition:.2s;color:var(--text2);font-size:13px}
+.drop-zone:hover{border-color:var(--accent);color:var(--text);background:rgba(88,166,255,.04)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+input[type=file]{display:none}
+.pat-input{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:9px 13px;color:var(--text);font-size:13px;
+  font-family:'DM Mono',monospace;outline:none;margin-top:8px}
+.pat-input:focus{border-color:var(--accent)}
+.status-msg{font-size:12px;margin-top:8px;min-height:18px}
+.ok{color:var(--green)}.err{color:var(--red)}
+
+/* HELP */
+.help-box{background:rgba(88,166,255,.05);border:1px solid rgba(88,166,255,.15);
+  border-radius:10px;padding:16px 18px;font-size:12px;line-height:1.8;margin-top:16px}
+.help-box h4{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.help-box ol{padding-left:18px}
+.help-box li{margin-bottom:6px}
+code{background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1px 6px;font-family:'DM Mono',monospace;font-size:11px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">SY · 社内ダッシュボード</span>
+  <div class="nav-links">
+    <a href="index.html">ポータル</a>
+    <a href="software.html" class="active">💻 SW部門</a>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-ghost" onclick="openHelp()">？ 使い方</button>
+    <button class="btn btn-ghost" onclick="openUpload()">📁 Excelで更新</button>
+    <button class="btn btn-save" onclick="openSave()">☁️ GitHubに保存</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <div class="hero-tag">SOFTWARE DIVISION</div>
+    <div class="hero-title">💻 <span>ソフトウェア部門</span> ダッシュボード</div>
+    <div class="hero-sub">trackerr / 配録 / KURAud / イツクルLogi / 千葉通商</div>
+  </div>
+  <span class="period-badge" id="periodBadge">2024年10月〜2026年4月</span>
+</div>
+
+<!-- KPI BAR -->
+<div class="kpi-bar">
+  <div class="kpi"><div class="kpi-label">累計売上</div><div class="kpi-value c-accent" id="kpiSales">—</div><div class="kpi-sub">百万円</div></div>
+  <div class="kpi"><div class="kpi-label">外注粗利（累計）</div><div class="kpi-value c-green" id="kpiGross">—</div><div class="kpi-sub">百万円</div></div>
+  <div class="kpi"><div class="kpi-label">平均粗利率</div><div class="kpi-value c-green" id="kpiMargin">—</div><div class="kpi-sub">外注コスト控除後</div></div>
+  <div class="kpi"><div class="kpi-label">trackerr LTV</div><div class="kpi-value c-accent" id="kpiLTV">¥48,791</div><div class="kpi-sub">チャーン率 10.7%</div></div>
+  <div class="kpi"><div class="kpi-label">trackerr ARPA</div><div class="kpi-value" id="kpiARPA" style="color:var(--accent)">¥5,209</div><div class="kpi-sub">月額平均（年次換算）</div></div>
+  <div class="kpi"><div class="kpi-label">継続率</div><div class="kpi-value c-red" id="kpiRetention">19.7%</div><div class="kpi-sub">12社継続 / 61社</div></div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+<div class="insight" id="insight">📊 「Excelで更新」ボタンからファイルをアップロードするとデータが反映されます。</div>
+
+<!-- 月次売上 -->
+<div class="sec-title">月次売上推移</div>
+<div class="card" style="margin-bottom:14px">
+  <div class="card-title"><span class="dot" style="background:var(--blue)"></span>月次売上（商品別積み上げ）＋ 外注粗利率</div>
+  <div class="chart-wrap" style="height:270px"><canvas id="cMonthlySales"></canvas></div>
+</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--green)"></span>外注粗利・粗利率推移</div>
+    <div class="chart-wrap" style="height:210px"><canvas id="cGross"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--orange)"></span>商品別売上構成（累計）</div>
+    <div class="chart-wrap" style="height:210px"><canvas id="cDonut"></canvas></div>
+  </div>
+</div>
+
+<!-- 配録 -->
+<div class="sec-title">配録（イツクルPOS）ユーザー別推移</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--blue)"></span>ユーザー別月次売上（積み上げ棒）</div>
+    <div class="chart-wrap" style="height:210px"><canvas id="cHairokuBar"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--purple)"></span>ユーザー別月次売上（折れ線）</div>
+    <div class="chart-wrap" style="height:210px"><canvas id="cHairokuLine"></canvas></div>
+  </div>
+</div>
+
+<!-- trackerr LTV -->
+<div class="sec-title">trackerr LTV分析</div>
+<div class="ltv-macro" id="ltvMacro">
+  <div class="macro-item"><div class="macro-label">総取引先</div><div class="macro-value c-accent">61社</div></div>
+  <div class="macro-item"><div class="macro-label">継続中</div><div class="macro-value c-green">12社</div></div>
+  <div class="macro-item"><div class="macro-label">解約済</div><div class="macro-value c-red">49社</div></div>
+  <div class="macro-item"><div class="macro-label">月次チャーン</div><div class="macro-value c-red">10.7%</div></div>
+  <div class="macro-item"><div class="macro-label">平均継続</div><div class="macro-value c-accent">7.5ヶ月</div></div>
+  <div class="macro-item"><div class="macro-label">月額ARPA</div><div class="macro-value c-accent">¥5,209</div></div>
+  <div class="macro-item"><div class="macro-label">LTV（全体）</div><div class="macro-value c-accent">¥48,791</div></div>
+</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--purple)"></span>取引先別 LTV Top20</div>
+    <div class="chart-wrap" style="height:300px"><canvas id="cLTVBar"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--amber)"></span>ARPA × 継続月数（散布図）</div>
+    <div class="chart-wrap" style="height:300px"><canvas id="cLTVScatter"></canvas></div>
+  </div>
+</div>
+<div class="card" style="margin-top:14px">
+  <div class="card-title"><span class="dot" style="background:var(--teal)"></span>取引先別 LTV 明細（上位20社）</div>
+  <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>取引先</th><th>ステータス</th>
+        <th style="text-align:right">累計売上</th>
+        <th style="text-align:right">月額ARPA</th>
+        <th style="text-align:right">継続月数</th>
+        <th style="text-align:right">LTV推計</th>
+      </tr></thead>
+      <tbody id="ltvBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<!-- UPLOAD MODAL -->
+<div class="overlay" id="uploadModal">
+  <div class="modal">
+    <h3>📁 Excelでデータ更新</h3>
+    <p>「ソフトウェア部門_売上分析_2024-2026.xlsx」をアップロードしてください。<br>
+      以下のシートを自動で読み込みます：<br>
+      <strong>月次売上_商品別 / 粗利分析_月次 / 配録_ユーザー別 / trackerr_LTV</strong></p>
+    <div class="drop-zone" onclick="document.getElementById('fileIn').click()">
+      📂 クリックしてファイルを選択<br>
+      <span style="font-size:11px;display:block;margin-top:4px">.xlsx / .xlsm</span>
+    </div>
+    <input type="file" id="fileIn" accept=".xlsx,.xlsm" onchange="handleFile(event)">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeUpload()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE MODAL -->
+<div class="overlay" id="saveModal">
+  <div class="modal">
+    <h3>☁️ GitHubに保存</h3>
+    <p>このHTMLファイルを GitHub リポジトリに push します。<br>
+      Personal Access Token（<code>repo</code> スコープ）を入力してください。<br>
+      ※ トークンはブラウザのみに保存。外部には送信しません。</p>
+    <label style="font-size:12px;color:var(--text2)">GitHub PAT</label>
+    <input class="pat-input" type="password" id="patIn" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <div id="saveStatus" class="status-msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSave()">キャンセル</button>
+      <button class="btn btn-save" onclick="pushToGitHub()">Push する</button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="overlay" id="helpModal">
+  <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto">
+    <h3>？ 使い方ガイド</h3>
+    <div class="help-box" style="margin-top:12px">
+      <h4>毎月の更新手順</h4>
+      <ol>
+        <li>Excelファイル（<code>ソフトウェア部門_売上分析_2024-2026.xlsx</code>）の <strong>月次入力シート</strong> に当月データを入力</li>
+        <li>「📁 Excelで更新」ボタンでファイルをアップロード → グラフが即時更新</li>
+        <li>内容を確認したら「☁️ GitHubに保存」→ PAT 入力 → Push</li>
+        <li>1〜2分で GitHub Pages に反映される</li>
+      </ol>
+    </div>
+    <div class="help-box">
+      <h4>PAT（Personal Access Token）の取得方法</h4>
+      <ol>
+        <li>GitHub にログイン → 右上のアイコン → Settings</li>
+        <li>左メニュー最下部 → Developer settings → Personal access tokens → Tokens (classic)</li>
+        <li>Generate new token → <code>repo</code> にチェック → Generate</li>
+        <li>発行されたトークンをコピー（一度しか表示されません）</li>
+        <li>「☁️ GitHubに保存」の PAT 欄に貼り付け（ブラウザが記憶）</li>
+      </ol>
+    </div>
+    <div class="help-box">
+      <h4>自動取得 vs 手入力</h4>
+      <table style="width:100%;font-size:11px;border-collapse:collapse">
+        <tr><th style="text-align:left;color:var(--green);padding:4px 0">自動取得（Excelアップ時）</th><th style="text-align:left;color:var(--orange);padding:4px 8px">手入力が必要</th></tr>
+        <tr><td style="color:var(--text2);padding:3px 0">売上（全商品）<br>外注コスト<br>外注粗利・粗利率<br>trackerr LTV指標<br>配録ユーザー別売上</td>
+            <td style="color:var(--text2);padding:3px 8px">コメント<br>予算・目標値<br>新規取引先の追記</td></tr>
+      </table>
+    </div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeHelp()">閉じる</button></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  静的デフォルトデータ（Excelアップで上書き）
+// ══════════════════════════════════════════════
+const DEFAULT = {
+  months:["2024年10月","2024年11月","2024年12月","2025年01月","2025年02月","2025年03月","2025年04月","2025年05月","2025年06月","2025年07月","2025年08月","2025年09月","2025年10月","2025年11月","2025年12月","2026年01月","2026年02月","2026年03月","2026年04月","2026年05月","2026年06月"],
+  sales:{
+    trackerr:[208800,147200,637400,359000,215200,502800,428400,234000,481200,108000,218800,167400,296600,334400,842200,226000,226800,374400,336000,0,0],
+    hairoku: [0,1510800,328400,328400,666800,330800,330800,440800,330800,560800,440800,485800,501800,587800,465800,465800,470800,478200,475800,478300,147500],
+    kuraud:  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,97000,97000,0],
+    logi:    [0,0,0,0,0,0,0,0,0,0,0,50000,50000,50000,50000,50000,50000,50000,50000,50000,50000],
+    ct_hosu: [190000,190000,190000,190000,190000,190000,190000,190000,190000,190000,190000,190000,548000,548000,548000,451000,451000,451000,355000,390000,0],
+    ct_kai:  [0,0,0,9092500,0,0,0,0,3655000,650800,0,0,0,0,0,0,0,0,1364000,252800,0]
+  },
+  pnl:{
+    sales: [398800,1848000,1155800,9970300,1072000,1023600,949200,630800,4657200,1509600,849600,893200,1396400,1520200,1906000,1192800,1198600,1353600,2677800,1268100,197500],
+    gross: [135050,1357750,-5240700,9715050,570250,715600,504950,456800,4303200,1335600,675600,351950,855400,979200,1411500,720800,726600,281850,1724300,1144100,-41722],
+    margin:[33.9,73.5,-453.9,97.4,53.2,69.9,53.2,72.4,92.4,88.5,79.5,39.4,61.3,64.4,74.1,60.4,60.6,20.8,64.4,90.2,-21.1]
+  },
+  hairoku:{
+    chiba:      [266400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,346400,330800,330800,330800,0],
+    koshin:     [0,0,0,0,0,0,0,0,110000,110000,110000,110000,110000,110000,110000,110000,110000,122500,122500,122500,0],
+    tokyo_alpha:[0,0,0,0,0,0,0,0,0,0,55000,55000,25000,25000,25000,25000,25000,25000,25000,25000,0]
+  },
+  ltv:{total:61,active:12,churned:49,churn:10.7,tenure:7.5,arpa:5209,ltv:48791},
+  ltv_customers:[]
+};
+
+let D = JSON.parse(JSON.stringify(DEFAULT));
+let CHARTS = {};
+
+// ── ショートラベル ──
+const SHORT = m => {
+  const [y,mo] = m.replace('年','/').replace('月','').split('/');
+  return `${y.slice(2)}/${mo}`;
+};
+
+// ── 共通チャートオプション ──
+function baseOpts(extra={}){
+  const grid = 'rgba(255,255,255,.05)';
+  const tick = {color:'#8B949E',font:{size:10,family:'Noto Sans JP'}};
+  return {
+    responsive:true, maintainAspectRatio:false,
+    animation:{duration:400},
+    plugins:{
+      legend:{labels:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'},boxWidth:12}},
+      tooltip:{backgroundColor:'#1C2333',borderColor:'#30363D',borderWidth:1,
+        titleColor:'#E6EDF3',bodyColor:'#8B949E',padding:10},
+      ...( extra.plugins||{} )
+    },
+    scales: extra.noScales ? undefined : {
+      x:{ticks:tick,grid:{color:grid}},
+      y:{ticks:{...tick,callback:v=>`¥${(v/1e6).toFixed(1)}M`},grid:{color:grid}},
+      ...(extra.y2?{y2:{position:'right',ticks:{...tick,color:'#58A6FF',callback:v=>v+'%'},grid:{display:false}}}:{})
+    },
+    ...(extra.opts||{})
+  };
+}
+
+// ══════════════════════════════════════════════
+//  グラフ構築
+// ══════════════════════════════════════════════
+function buildAll(){
+  Object.values(CHARTS).forEach(c=>c.destroy());
+  CHARTS={};
+
+  const S  = D.sales;
+  const ms = D.months.map(SHORT);
+  const N  = D.months.length;
+
+  // ① KPI 更新
+  const ts = D.pnl.sales.reduce((a,b)=>a+b,0);
+  const tg = D.pnl.gross.reduce((a,b)=>a+b,0);
+  const vm = D.pnl.margin.filter(m=>Math.abs(m)<200);
+  const am = vm.reduce((a,b)=>a+b,0)/vm.length;
+  document.getElementById('kpiSales').textContent    = (ts/1e6).toFixed(2);
+  document.getElementById('kpiGross').textContent    = (tg/1e6).toFixed(2);
+  document.getElementById('kpiMargin').textContent   = am.toFixed(1)+'%';
+  document.getElementById('kpiLTV').textContent      = '¥'+D.ltv.ltv.toLocaleString();
+  document.getElementById('kpiARPA').textContent     = '¥'+D.ltv.arpa.toLocaleString();
+  document.getElementById('kpiRetention').textContent= (D.ltv.active/D.ltv.total*100).toFixed(1)+'%';
+  document.getElementById('kpiRetention').className  = 'kpi-value '+(D.ltv.active/D.ltv.total>.3?'c-green':'c-red');
+
+  // ② 自動インサイト
+  const li = D.pnl.sales.length-1;
+  const lm = D.months[li];
+  const hSum = D.hairoku.chiba.reduce((a,b)=>a+b,0)+D.hairoku.koshin.reduce((a,b)=>a+b,0)+D.hairoku.tokyo_alpha.reduce((a,b)=>a+b,0);
+  document.getElementById('insight').innerHTML =
+    `📊 <strong>累計売上：¥${(ts/1e6).toFixed(2)}M</strong>　|　`+
+    `<strong>外注粗利：¥${(tg/1e6).toFixed(2)}M</strong>　|　`+
+    `最終月（${lm}）粗利率：<strong>${D.pnl.margin[li].toFixed(1)}%</strong><br>`+
+    `trackerr LTV <strong>¥${D.ltv.ltv.toLocaleString()}</strong>（チャーン率${D.ltv.churn}%）　|　`+
+    `配録3社累計 <strong>¥${hSum.toLocaleString()}</strong>円`;
+
+  // ③ LTV マクロ更新
+  document.getElementById('ltvMacro').innerHTML = [
+    ['総取引先', D.ltv.total+'社', 'c-accent'],
+    ['継続中',   D.ltv.active+'社','c-green'],
+    ['解約済',   D.ltv.churned+'社','c-red'],
+    ['月次チャーン', D.ltv.churn+'%','c-red'],
+    ['平均継続',  D.ltv.tenure+'ヶ月','c-accent'],
+    ['月額ARPA', '¥'+D.ltv.arpa.toLocaleString(),'c-accent'],
+    ['LTV（全体）','¥'+D.ltv.ltv.toLocaleString(),'c-accent'],
+  ].map(([l,v,c])=>`<div class="macro-item"><div class="macro-label">${l}</div><div class="macro-value ${c}">${v}</div></div>`).join('');
+
+  // ──────────────────────────────
+  //  Chart ①: 月次売上積み上げ + 粗利率
+  // ──────────────────────────────
+  CHARTS.monthlySales = new Chart(document.getElementById('cMonthlySales'),{
+    data:{labels:ms,datasets:[
+      {type:'bar',label:'イツクル', data:S.trackerr,backgroundColor:'rgba(24,95,165,.78)', stack:'s'},
+      {type:'bar',label:'配録',     data:S.hairoku, backgroundColor:'rgba(29,158,117,.78)',stack:'s'},
+      {type:'bar',label:'KURAud',  data:S.kuraud,  backgroundColor:'rgba(112,48,160,.78)',stack:'s'},
+      {type:'bar',label:'Logi',    data:S.logi,    backgroundColor:'rgba(112,173,71,.78)', stack:'s'},
+      {type:'bar',label:'CT保守',  data:S.ct_hosu, backgroundColor:'rgba(237,125,49,.78)',stack:'s'},
+      {type:'bar',label:'CT開発',  data:S.ct_kai,  backgroundColor:'rgba(197,90,17,.78)', stack:'s'},
+      {type:'line',label:'粗利率%',data:D.pnl.margin,borderColor:'#58A6FF',borderWidth:2,
+       pointRadius:3,yAxisID:'y2',tension:.35,fill:false,pointBackgroundColor:'#58A6FF'},
+    ]},
+    options:{...baseOpts({y2:true}),
+      plugins:{...baseOpts({y2:true}).plugins,
+        tooltip:{...baseOpts({y2:true}).plugins.tooltip,
+          callbacks:{label:ctx=>ctx.dataset.type==='line'?`粗利率: ${ctx.parsed.y.toFixed(1)}%`:`${ctx.dataset.label}: ¥${ctx.parsed.y.toLocaleString()}`}
+        }
+      }
+    }
+  });
+
+  // Chart ②: 粗利推移
+  CHARTS.gross = new Chart(document.getElementById('cGross'),{
+    data:{labels:ms,datasets:[
+      {type:'bar',label:'外注粗利',data:D.pnl.gross,
+       backgroundColor:D.pnl.gross.map(v=>v>=0?'rgba(63,185,80,.6)':'rgba(248,81,73,.55)'),
+       borderColor:D.pnl.gross.map(v=>v>=0?'#3FB950':'#F85149'),borderWidth:1,borderRadius:3},
+      {type:'line',label:'粗利率%',data:D.pnl.margin,borderColor:'#58A6FF',borderWidth:2,
+       pointRadius:2,yAxisID:'y2',tension:.35,fill:false},
+    ]},
+    options: baseOpts({y2:true})
+  });
+
+  // Chart ③: 商品別ドーナツ
+  const pTotals = [S.trackerr,S.hairoku,S.kuraud,S.logi,S.ct_hosu,S.ct_kai]
+    .map(a=>a.reduce((x,y)=>x+y,0));
+  const pTotal = pTotals.reduce((a,b)=>a+b,0);
+  CHARTS.donut = new Chart(document.getElementById('cDonut'),{
+    type:'doughnut',
+    data:{labels:['イツクル','配録','KURAud','Logi','CT保守','CT開発'],
+      datasets:[{data:pTotals,
+        backgroundColor:['#185FA5','#1D9E75','#7030A0','#70AD47','#ED7D31','#C55A11'],
+        borderWidth:2,borderColor:'#1C2333',hoverOffset:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'},
+          generateLabels:chart=>{
+            const d=chart.data.datasets[0];
+            return chart.data.labels.map((l,i)=>({
+              text:`${l}  ${(d.data[i]/pTotal*100).toFixed(1)}%`,
+              fillStyle:d.backgroundColor[i],hidden:false,index:i
+            }));
+          }
+        }},
+        tooltip:{backgroundColor:'#1C2333',borderColor:'#30363D',borderWidth:1,
+          titleColor:'#E6EDF3',bodyColor:'#8B949E',
+          callbacks:{label:ctx=>`¥${ctx.parsed.toLocaleString()}`}
+        }
+      }
+    }
+  });
+
+  // Chart ④: 配録積み上げ
+  const H = D.hairoku;
+  CHARTS.hairokuBar = new Chart(document.getElementById('cHairokuBar'),{
+    type:'bar',
+    data:{labels:ms,datasets:[
+      {label:'千葉通商',        data:H.chiba,       backgroundColor:'rgba(24,95,165,.8)',  stack:'h'},
+      {label:'広伸配送',        data:H.koshin,      backgroundColor:'rgba(29,158,117,.8)', stack:'h'},
+      {label:'東京アルファライン',data:H.tokyo_alpha,backgroundColor:'rgba(186,117,23,.8)',stack:'h'},
+    ]},
+    options:{...baseOpts(),plugins:{...baseOpts().plugins,
+      tooltip:{...baseOpts().plugins.tooltip,
+        callbacks:{label:ctx=>`${ctx.dataset.label}: ¥${ctx.parsed.y.toLocaleString()}`}
+      }
+    }}
+  });
+
+  // Chart ⑤: 配録折れ線
+  CHARTS.hairokuLine = new Chart(document.getElementById('cHairokuLine'),{
+    type:'line',
+    data:{labels:ms,datasets:[
+      {label:'千葉通商',        data:H.chiba,       borderColor:'#185FA5',borderWidth:2.5,tension:.3,pointRadius:4,fill:false,pointBackgroundColor:'#185FA5'},
+      {label:'広伸配送',        data:H.koshin,      borderColor:'#1D9E75',borderWidth:2.5,tension:.3,pointRadius:4,fill:false,pointBackgroundColor:'#1D9E75'},
+      {label:'東京アルファライン',data:H.tokyo_alpha,borderColor:'#BA7517',borderWidth:2.5,tension:.3,pointRadius:4,fill:false,pointBackgroundColor:'#BA7517'},
+    ]},
+    options:baseOpts()
+  });
+
+  // Chart ⑥: LTV棒
+  const top20 = [...D.ltv_customers].sort((a,b)=>b.ltv-a.ltv).slice(0,20);
+  if(top20.length>0){
+    CHARTS.ltvBar = new Chart(document.getElementById('cLTVBar'),{
+      type:'bar',
+      data:{labels:top20.map(c=>c.name),datasets:[{
+        label:'LTV推計',data:top20.map(c=>c.ltv),borderRadius:4,
+        backgroundColor:top20.map(c=>c.status==='継続中'?'rgba(63,185,80,.65)':'rgba(88,166,255,.45)')
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        animation:{duration:400},
+        plugins:{legend:{display:false},
+          tooltip:{backgroundColor:'#1C2333',borderColor:'#30363D',borderWidth:1,
+            titleColor:'#E6EDF3',bodyColor:'#8B949E',
+            callbacks:{label:ctx=>`¥${ctx.parsed.x.toLocaleString()}`}}
+        },
+        scales:{
+          x:{ticks:{color:'#8B949E',font:{size:10},callback:v=>'¥'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{ticks:{color:'#8B949E',font:{size:10}},grid:{display:false}}
+        }
+      }
+    });
+  }
+
+  // Chart ⑦: ARPA×継続月数 散布
+  if(D.ltv_customers.length>0){
+    CHARTS.scatter = new Chart(document.getElementById('cLTVScatter'),{
+      type:'scatter',
+      data:{datasets:[
+        {label:'継続中',data:D.ltv_customers.filter(c=>c.status==='継続中').map(c=>({x:c.tenure,y:c.arpa,n:c.name})),
+         backgroundColor:'rgba(63,185,80,.7)',pointRadius:6,pointHoverRadius:8},
+        {label:'解約済',data:D.ltv_customers.filter(c=>c.status!=='継続中').map(c=>({x:c.tenure,y:c.arpa,n:c.name})),
+         backgroundColor:'rgba(248,81,73,.4)',pointRadius:4,pointHoverRadius:6},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{
+          legend:{labels:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'}}},
+          tooltip:{backgroundColor:'#1C2333',borderColor:'#30363D',borderWidth:1,
+            titleColor:'#E6EDF3',bodyColor:'#8B949E',
+            callbacks:{label:ctx=>`${ctx.raw.n}: ¥${ctx.raw.y.toLocaleString()} / ${ctx.raw.x}ヶ月`}}
+        },
+        scales:{
+          x:{title:{display:true,text:'継続月数',color:'#8B949E'},ticks:{color:'#8B949E',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{title:{display:true,text:'月額ARPA（円）',color:'#8B949E'},ticks:{color:'#8B949E',font:{size:10},callback:v=>'¥'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.05)'}}
+        }
+      }
+    });
+  }
+
+  // LTV テーブル
+  document.getElementById('ltvBody').innerHTML =
+    [...D.ltv_customers].sort((a,b)=>b.ltv-a.ltv).slice(0,20).map(c=>`
+      <tr>
+        <td>${c.name}</td>
+        <td><span class="badge ${c.status==='継続中'?'badge-on':'badge-off'}">${c.status}</span></td>
+        <td style="text-align:right">¥${c.cumulative.toLocaleString()}</td>
+        <td style="text-align:right">¥${c.arpa.toLocaleString()}</td>
+        <td style="text-align:right">${c.tenure}ヶ月</td>
+        <td style="text-align:right;color:var(--accent);font-weight:700">¥${c.ltv.toLocaleString()}</td>
+      </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════
+//  Excel 読み込み
+// ══════════════════════════════════════════════
+function handleFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const wb = XLSX.read(ev.target.result,{type:'binary',cellDates:true});
+      parseExcel(wb);
+      closeUpload();
+      buildAll();
+    }catch(err){
+      alert('読み込みエラー：'+err.message);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function getSheet(wb, name){
+  return wb.Sheets[wb.SheetNames.find(n=>n.includes(name))||''];
+}
+function cellVal(ws, addr, def=0){
+  const c = ws?ws[addr]:null;
+  if(!c) return def;
+  return typeof c.v==='number'?c.v : (parseFloat(String(c.v).replace(/[¥,]/,''))||def);
+}
+function colLetter(n){ // 1-indexed → A,B,...
+  let s='';
+  while(n>0){ s=String.fromCharCode(65+(n-1)%26)+s; n=Math.floor((n-1)/26); }
+  return s;
+}
+
+function parseExcel(wb){
+  D = JSON.parse(JSON.stringify(DEFAULT)); // リセット
+
+  // ─ 月次売上_商品別 ─
+  const ws1 = getSheet(wb,'月次売上');
+  if(ws1){
+    const months=[], tr=[], hr=[], kr=[], lr=[], ch=[], cd=[];
+    for(let r=4;r<=60;r++){
+      const ym = ws1[`A${r}`];
+      if(!ym||String(ym.v).includes('合計')) break;
+      months.push(String(ym.v));
+      tr.push(cellVal(ws1,`B${r}`)); hr.push(cellVal(ws1,`C${r}`));
+      kr.push(cellVal(ws1,`D${r}`)); lr.push(cellVal(ws1,`F${r}`));
+      ch.push(cellVal(ws1,`G${r}`)); cd.push(cellVal(ws1,`H${r}`));
+    }
+    if(months.length>0){
+      D.months=months;
+      D.sales={trackerr:tr,hairoku:hr,kuraud:kr,logi:lr,ct_hosu:ch,ct_kai:cd};
+    }
+  }
+
+  // ─ 粗利分析_月次 ─
+  const ws3 = getSheet(wb,'粗利分析');
+  if(ws3){
+    const sl=[], gl=[], ml=[];
+    for(let r=5;r<=60;r++){
+      const ym=ws3[`A${r}`];
+      if(!ym||String(ym.v).includes('合計')) break;
+      sl.push(cellVal(ws3,`B${r}`));
+      gl.push(cellVal(ws3,`O${r}`));
+      const mv=cellVal(ws3,`P${r}`,0);
+      ml.push(Math.abs(mv)>10?mv:mv*100); // % or decimal
+    }
+    if(sl.length>0){ D.pnl.sales=sl; D.pnl.gross=gl; D.pnl.margin=ml; }
+  }
+
+  // ─ 配録_ユーザー別 ─
+  const ws5 = getSheet(wb,'配録_ユーザー');
+  if(ws5){
+    const cb=[], ks=[], ta=[];
+    for(let r=4;r<=60;r++){
+      const ym=ws5[`A${r}`];
+      if(!ym||String(ym.v).includes('合計')) break;
+      cb.push(cellVal(ws5,`B${r}`));
+      ks.push(cellVal(ws5,`C${r}`));
+      ta.push(cellVal(ws5,`D${r}`));
+    }
+    if(cb.length>0){ D.hairoku={chiba:cb,koshin:ks,tokyo_alpha:ta}; }
+  }
+
+  // ─ trackerr_LTV ─
+  const ws7 = getSheet(wb,'trackerr_LTV');
+  if(ws7){
+    // マクロ指標
+    const macro = {
+      total:61,active:0,churned:0,churn:10.7,tenure:7.5,arpa:5209,ltv:48791
+    };
+    const customers=[];
+    for(let r=10;r<=100;r++){
+      const nm=ws7[`A${r}`];
+      if(!nm) continue;
+      const name=String(nm.v||'');
+      if(name.includes('合計')||name.includes('平均')) continue;
+      const status=String(ws7[`I${r}`]?.v||'');
+      const arpa=cellVal(ws7,`H${r}`);
+      const ltv=cellVal(ws7,`J${r}`);
+      const tenure=cellVal(ws7,`E${r}`);
+      const cum=cellVal(ws7,`G${r}`);
+      customers.push({name:name.slice(0,22),status,arpa,ltv,tenure,cumulative:cum});
+      if(status==='継続中') macro.active++; else macro.churned++;
+    }
+    if(customers.length>0){
+      macro.total=customers.length;
+      const arpaArr=customers.map(c=>c.arpa).filter(v=>v>0);
+      macro.arpa=Math.round(arpaArr.reduce((a,b)=>a+b,0)/arpaArr.length);
+      const ltvArr=customers.map(c=>c.ltv).filter(v=>v>0);
+      macro.ltv=Math.round(ltvArr.reduce((a,b)=>a+b,0)/ltvArr.length);
+      D.ltv=macro;
+      D.ltv_customers=customers;
+    }
+  }
+
+  // 期間バッジ更新
+  if(D.months.length>0){
+    document.getElementById('periodBadge').textContent =
+      D.months[0]+'〜'+D.months[D.months.length-1];
+  }
+}
+
+// ══════════════════════════════════════════════
+//  GitHub Push
+// ══════════════════════════════════════════════
+async function pushToGitHub(){
+  const pat  = document.getElementById('patIn').value.trim();
+  const stat = document.getElementById('saveStatus');
+  if(!pat){ stat.innerHTML='<span class="err">PAT を入力してください</span>'; return; }
+  localStorage.setItem('gh_pat', pat);
+
+  // リポジトリ設定（あなたのアカウント名に合わせてください）
+  const OWNER = 'YOUR_GITHUB_USERNAME'; // ← ここを変更
+  const REPO  = 'sw-dashboard';
+  const PATH  = 'software.html';
+  const BRANCH= 'main';
+
+  stat.innerHTML = '⏳ アップロード中...';
+  try{
+    const html = document.documentElement.outerHTML;
+    const content = btoa(unescape(encodeURIComponent(html)));
+    const headers = {'Authorization':'token '+pat,'Content-Type':'application/json'};
+
+    // 現在の SHA 取得
+    const getRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{headers});
+    const sha = getRes.ok ? (await getRes.json()).sha : undefined;
+
+    const body = JSON.stringify({
+      message:`Update ${PATH} - ${new Date().toLocaleString('ja')}`,
+      content, branch:BRANCH, ...(sha?{sha}:{})
+    });
+    const putRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,
+      {method:'PUT',headers,body});
+
+    if(putRes.ok){
+      stat.innerHTML='<span class="ok">✓ Push 完了！1〜2分で Pages に反映されます</span>';
+    } else {
+      const err = await putRes.json();
+      stat.innerHTML=`<span class="err">エラー: ${err.message}</span>`;
+    }
+  } catch(e){
+    stat.innerHTML=`<span class="err">通信エラー: ${e.message}</span>`;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  モーダル開閉
+// ══════════════════════════════════════════════
+function openUpload(){ document.getElementById('uploadModal').classList.add('open') }
+function closeUpload(){ document.getElementById('uploadModal').classList.remove('open'); document.getElementById('fileIn').value='' }
+function openSave(){
+  document.getElementById('saveModal').classList.add('open');
+  const saved = localStorage.getItem('gh_pat');
+  if(saved) document.getElementById('patIn').value=saved;
+  document.getElementById('saveStatus').innerHTML='';
+}
+function closeSave(){ document.getElementById('saveModal').classList.remove('open') }
+function openHelp(){ document.getElementById('helpModal').classList.add('open') }
+function closeHelp(){ document.getElementById('helpModal').classList.remove('open') }
+
+// オーバーレイクリックで閉じる
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open') });
+});
+
+// ── 初期描画 ──
+buildAll();
+</script>
+</body>
+</html>
