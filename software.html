@@ -160,7 +160,10 @@ code{background:var(--surface);border:1px solid var(--border);border-radius:4px;
   <div class="kpi"><div class="kpi-label">平均粗利率</div><div class="kpi-value c-green" id="kpiMargin">—</div><div class="kpi-sub">外注コスト控除後</div></div>
   <div class="kpi"><div class="kpi-label">trackerr LTV</div><div class="kpi-value c-accent" id="kpiLTV">¥48,791</div><div class="kpi-sub">チャーン率 10.7%</div></div>
   <div class="kpi"><div class="kpi-label">trackerr ARPA</div><div class="kpi-value" id="kpiARPA" style="color:var(--accent)">¥5,209</div><div class="kpi-sub">月額平均（年次換算）</div></div>
-  <div class="kpi"><div class="kpi-label">継続率</div><div class="kpi-value c-red" id="kpiRetention">19.7%</div><div class="kpi-sub">12社継続 / 61社</div></div>
+  <div class="kpi"><div class="kpi-label">trackerr 継続率</div><div class="kpi-value c-red" id="kpiRetention">19.7%</div><div class="kpi-sub">12社継続 / 61社</div></div>
+  <div class="kpi"><div class="kpi-label">配録 LTV</div><div class="kpi-value c-accent" id="kpiHLTV">—</div><div class="kpi-sub">3ユーザー平均</div></div>
+  <div class="kpi"><div class="kpi-label">配録 ARPA</div><div class="kpi-value" id="kpiHARPA" style="color:var(--accent)">—</div><div class="kpi-sub">月額平均</div></div>
+  <div class="kpi"><div class="kpi-label">配録 累計売上</div><div class="kpi-value c-green" id="kpiHTotal">—</div><div class="kpi-sub">百万円</div></div>
 </div>
 
 <!-- MAIN -->
@@ -232,6 +235,47 @@ code{background:var(--surface);border:1px solid var(--border);border-radius:4px;
       </tr></thead>
       <tbody id="ltvBody"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- 配録 LTV -->
+<div class="sec-title">配録（イツクルPOS）LTV分析</div>
+<div class="ltv-macro" id="hairokuLtvMacro">
+  <div class="macro-item"><div class="macro-label">ユーザー数</div><div class="macro-value c-accent">3社</div></div>
+  <div class="macro-item"><div class="macro-label">継続中</div><div class="macro-value c-green" id="hLtvActive">—</div></div>
+  <div class="macro-item"><div class="macro-label">月額ARPA（平均）</div><div class="macro-value c-accent" id="hLtvARPA">—</div></div>
+  <div class="macro-item"><div class="macro-label">平均継続月数</div><div class="macro-value c-accent" id="hLtvTenure">—</div></div>
+  <div class="macro-item"><div class="macro-label">累計売上</div><div class="macro-value c-green" id="hLtvTotal">—</div></div>
+  <div class="macro-item"><div class="macro-label">LTV（平均推計）</div><div class="macro-value c-accent" id="hLtvLTV">—</div></div>
+</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--blue)"></span>ユーザー別 LTV 比較（棒グラフ）</div>
+    <div class="chart-wrap" style="height:220px"><canvas id="cHLTVBar"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span>ユーザー別 月額ARPA × 継続月数</div>
+    <div class="chart-wrap" style="height:220px"><canvas id="cHLTVDetail"></canvas></div>
+  </div>
+</div>
+<div class="card" style="margin-top:14px">
+  <div class="card-title"><span class="dot" style="background:var(--blue)"></span>配録 ユーザー別 LTV 明細</div>
+  <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>ユーザー</th>
+        <th>利用開始</th>
+        <th style="text-align:right">継続月数</th>
+        <th style="text-align:right">累計売上</th>
+        <th style="text-align:right">月額ARPA</th>
+        <th style="text-align:right">LTV推計</th>
+        <th>ステータス・備考</th>
+      </tr></thead>
+      <tbody id="hairokuLtvBody"></tbody>
+    </table>
+  </div>
+  <div style="font-size:11px;color:var(--text2);margin-top:10px;padding:10px 12px;background:var(--surface);border-radius:8px;line-height:1.7">
+    ⚠️ <strong>算出前提</strong>：配録は3社のみのため統計的チャーン率が算出困難。LTV は <strong>「現在の月額ARPA × 観測継続月数」</strong>（実績値）と <strong>「ARPA × 想定継続年数（5年）」</strong>（将来推計）の2軸で表示。千葉通商は長期利用中のため実績値が主指標。
   </div>
 </div>
 
@@ -332,7 +376,13 @@ const DEFAULT = {
     tokyo_alpha:[0,0,0,0,0,0,0,0,0,0,55000,55000,25000,25000,25000,25000,25000,25000,25000,25000,0]
   },
   ltv:{total:61,active:12,churned:49,churn:10.7,tenure:7.5,arpa:5209,ltv:48791},
-  ltv_customers:[]
+  ltv_customers:[],
+  // 配録LTV（3ユーザー。Excelアップで月次・金額が自動更新）
+  hairoku_ltv:[
+    {name:'千葉通商',          start:'2024年10月',months:21,arpa:341143,cumulative:6801200,status:'継続中',note:'2026/3〜¥330,800/月'},
+    {name:'広伸配送',          start:'2025年06月',months:13,arpa:113654,cumulative:1507500,status:'継続中',note:'2026/4〜¥122,500/月'},
+    {name:'東京アルファライン', start:'2025年08月',months:11,arpa:27273, cumulative:275000, status:'継続中',note:'¥25,000/月'},
+  ]
 };
 
 let D = JSON.parse(JSON.stringify(DEFAULT));
@@ -564,6 +614,114 @@ function buildAll(){
         <td style="text-align:right">${c.tenure}ヶ月</td>
         <td style="text-align:right;color:var(--accent);font-weight:700">¥${c.ltv.toLocaleString()}</td>
       </tr>`).join('');
+
+  // ══════════════════════════════════════════════
+  //  配録 LTV 計算・グラフ
+  // ══════════════════════════════════════════════
+  buildHairokuLTV();
+}
+
+function buildHairokuLTV(){
+  // 配録は全3社とも継続中。チャーン率が統計的に計算できないため
+  // ① 実績LTV = 累計売上（観測期間内）
+  // ② 将来推計LTV = 月額ARPA × 60ヶ月（5年想定）
+  const HL = D.hairoku_ltv;
+  const ARPA_avg  = Math.round(HL.reduce((a,c)=>a+c.arpa,0)/HL.length);
+  const total_cum = HL.reduce((a,c)=>a+c.cumulative,0);
+  const tenure_avg= (HL.reduce((a,c)=>a+c.months,0)/HL.length).toFixed(1);
+  const ltv_5y    = Math.round(ARPA_avg * 60);
+
+  // KPIバー更新
+  document.getElementById('kpiHLTV').textContent  = '¥'+ltv_5y.toLocaleString();
+  document.getElementById('kpiHARPA').textContent = '¥'+ARPA_avg.toLocaleString();
+  document.getElementById('kpiHTotal').textContent= (total_cum/1e6).toFixed(2);
+
+  // マクロ更新
+  document.getElementById('hLtvActive').textContent  = HL.filter(c=>c.status==='継続中').length+'社';
+  document.getElementById('hLtvARPA').textContent    = '¥'+ARPA_avg.toLocaleString();
+  document.getElementById('hLtvTenure').textContent  = tenure_avg+'ヶ月（平均）';
+  document.getElementById('hLtvTotal').textContent   = '¥'+total_cum.toLocaleString();
+  document.getElementById('hLtvLTV').textContent     = '¥'+ltv_5y.toLocaleString()+'（5年推計）';
+
+  const COLORS = ['#185FA5','#1D9E75','#BA7517'];
+
+  // ① LTV比較棒グラフ（実績 vs 5年推計）
+  if(CHARTS.hLTVBar) CHARTS.hLTVBar.destroy();
+  CHARTS.hLTVBar = new Chart(document.getElementById('cHLTVBar'),{
+    type:'bar',
+    data:{
+      labels: HL.map(c=>c.name),
+      datasets:[
+        {label:'累計売上（実績）',
+         data:HL.map(c=>c.cumulative),
+         backgroundColor:COLORS.map(c=>c+'CC'),
+         borderRadius:5},
+        {label:'LTV（5年推計）',
+         data:HL.map(c=>c.arpa*60),
+         backgroundColor:COLORS.map(c=>c+'44'),
+         borderRadius:5,
+         borderColor:COLORS,borderWidth:1.5},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:400},
+      plugins:{
+        legend:{labels:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'},boxWidth:12}},
+        tooltip:{backgroundColor:'#1C2333',borderColor:'#30363D',borderWidth:1,
+          titleColor:'#E6EDF3',bodyColor:'#8B949E',
+          callbacks:{label:ctx=>`${ctx.dataset.label}: ¥${ctx.parsed.y.toLocaleString()}`}}
+      },
+      scales:{
+        x:{ticks:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#8B949E',font:{size:10},callback:v=>'¥'+(v/1e6).toFixed(1)+'M'},grid:{color:'rgba(255,255,255,.05)'}}
+      }
+    }
+  });
+
+  // ② ARPA × 継続月数 詳細バー（横積み）
+  if(CHARTS.hLTVDetail) CHARTS.hLTVDetail.destroy();
+  CHARTS.hLTVDetail = new Chart(document.getElementById('cHLTVDetail'),{
+    type:'bar',
+    data:{
+      labels:['月額ARPA（現在）','継続月数（実績）'],
+      datasets: HL.map((c,i)=>({
+        label:c.name,
+        data:[c.arpa, c.months],
+        backgroundColor:COLORS[i]+'CC',
+        borderRadius:4,
+      }))
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:400},
+      indexAxis:'y',
+      plugins:{
+        legend:{labels:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'},boxWidth:12}},
+        tooltip:{backgroundColor:'#1C2333',borderColor:'#30363D',borderWidth:1,
+          titleColor:'#E6EDF3',bodyColor:'#8B949E',
+          callbacks:{label:ctx=>{
+            const u = ctx.dataIndex===0?'円':'ヶ月';
+            return `${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()}${u}`;
+          }}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#8B949E',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#8B949E',font:{size:11,family:'Noto Sans JP'}},grid:{display:false}}
+      }
+    }
+  });
+
+  // テーブル
+  document.getElementById('hairokuLtvBody').innerHTML = HL.map((c,i)=>`
+    <tr>
+      <td style="color:${COLORS[i]};font-weight:700">${c.name}</td>
+      <td>${c.start}</td>
+      <td style="text-align:right">${c.months}ヶ月</td>
+      <td style="text-align:right">¥${c.cumulative.toLocaleString()}</td>
+      <td style="text-align:right">¥${c.arpa.toLocaleString()}</td>
+      <td style="text-align:right;color:var(--accent);font-weight:700">¥${(c.arpa*60).toLocaleString()}<br><span style="font-size:10px;color:var(--text2)">実績¥${c.cumulative.toLocaleString()}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${c.note}</td>
+    </tr>`).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -647,7 +805,26 @@ function parseExcel(wb){
       ks.push(cellVal(ws5,`C${r}`));
       ta.push(cellVal(ws5,`D${r}`));
     }
-    if(cb.length>0){ D.hairoku={chiba:cb,koshin:ks,tokyo_alpha:ta}; }
+    if(cb.length>0){
+      D.hairoku={chiba:cb,koshin:ks,tokyo_alpha:ta};
+
+      // 配録LTVをExcelデータから再計算
+      const users = [
+        {name:'千葉通商',         data:cb, start:'2024年10月', note:''},
+        {name:'広伸配送',         data:ks, start:'2025年06月', note:''},
+        {name:'東京アルファライン',data:ta, start:'2025年08月', note:''},
+      ];
+      D.hairoku_ltv = users.map(u=>{
+        const nonzero = u.data.filter(v=>v>0);
+        const cum     = u.data.reduce((a,b)=>a+b,0);
+        const months  = nonzero.length || 1;
+        const arpa    = Math.round(cum / months);
+        // 最後の値が0かどうかでステータス判定
+        const lastVal = u.data[u.data.length-1];
+        const status  = lastVal > 0 ? '継続中' : '要確認';
+        return {name:u.name, start:u.start, months, arpa, cumulative:cum, status, note:u.note||`直近¥${(u.data.filter(v=>v>0).slice(-1)[0]||0).toLocaleString()}/月`};
+      });
+    }
   }
 
   // ─ trackerr_LTV ─
@@ -699,7 +876,7 @@ async function pushToGitHub(){
   localStorage.setItem('gh_pat', pat);
 
   // リポジトリ設定（あなたのアカウント名に合わせてください）
-  const OWNER = 'Akakura-T'; // ← ここを変更
+  const OWNER = 'YOUR_GITHUB_USERNAME'; // ← ここを変更
   const REPO  = 'sw-dashboard';
   const PATH  = 'software.html';
   const BRANCH= 'main';
