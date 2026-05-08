@@ -471,8 +471,8 @@ function buildAll(){
       {type:'bar',label:'配録',     data:S.hairoku, backgroundColor:'rgba(29,158,117,.78)',stack:'s'},
       {type:'bar',label:'KURAud',  data:S.kuraud,  backgroundColor:'rgba(112,48,160,.78)',stack:'s'},
       {type:'bar',label:'Logi',    data:S.logi,    backgroundColor:'rgba(112,173,71,.78)', stack:'s'},
-      {type:'bar',label:'CT保守',  data:S.ct_hosu, backgroundColor:'rgba(237,125,49,.78)',stack:'s'},
-      {type:'bar',label:'CT開発',  data:S.ct_kai,  backgroundColor:'rgba(197,90,17,.78)', stack:'s'},
+      {type:'bar',label:'千葉通商保守',  data:S.ct_hosu, backgroundColor:'rgba(237,125,49,.78)',stack:'s'},
+      {type:'bar',label:'千葉通商開発',  data:S.ct_kai,  backgroundColor:'rgba(197,90,17,.78)', stack:'s'},
       {type:'line',label:'粗利率%',data:D.pnl.margin,borderColor:'#58A6FF',borderWidth:2,
        pointRadius:3,yAxisID:'y2',tension:.35,fill:false,pointBackgroundColor:'#58A6FF'},
     ]},
@@ -503,7 +503,7 @@ function buildAll(){
   const pTotal = pTotals.reduce((a,b)=>a+b,0);
   CHARTS.donut = new Chart(document.getElementById('cDonut'),{
     type:'doughnut',
-    data:{labels:['イツクル','配録','KURAud','Logi','CT保守','CT開発'],
+    data:{labels:['イツクル','配録','KURAud','Logi','千葉通商保守','千葉通商開発'],
       datasets:[{data:pTotals,
         backgroundColor:['#185FA5','#1D9E75','#7030A0','#70AD47','#ED7D31','#C55A11'],
         borderWidth:2,borderColor:'#1C2333',hoverOffset:6}]
